@@ -1,0 +1,48 @@
+# Ignore .env files
+.env
+
+# Python-related ignores
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+*.log
+pip-log.txt
+
+# Virtualenv
+venv/
+env/
+ENV/
+bin/
+lib/
+local/
+.venv/
+
+# Django static and media files
+/staticfiles/
+/mediafiles/
+
+# Database files
+*.sqlite3
+
+# Django migrations
+*/migrations/*.pyc
+*/migrations/__pycache__/
+*/migrations/*.py
+
+# VSCode settings (optional)
+.vscode/
