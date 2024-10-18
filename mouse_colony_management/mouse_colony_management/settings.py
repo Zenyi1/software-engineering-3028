@@ -88,20 +88,17 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Default database (SQLite for local development)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',  # PostgreSQL for Heroku
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),         # Fallback local SQLite
-        'USER': '',                                           # Leave blank for SQLite
-        'PASSWORD': '',                                       # Leave blank for SQLite
-        'HOST': '',
-        'PORT': '',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-# Update the database configuration with Heroku's database URL
-db_from_env = dj_database_url.config(conn_max_age=600)
-DATABASES['default'].update(db_from_env)
+# Update the database configuration for Heroku (PostgreSQL)
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 
 # DATABASES = {
