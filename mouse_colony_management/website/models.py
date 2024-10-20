@@ -17,29 +17,6 @@ class Team(models.Model):
         return self.name
 
 
-class TeamMembership(models.Model):
-    ROLE_CHOICES = [
-        ('leader', 'Leader'),
-        ('staff', 'Staff'),
-        ('new_staff', 'New Staff'),
-    ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-
-    class Meta:
-        unique_together = ('user', 'team')
-
-    def __str__(self):
-        return f"{self.user.username} - {self.team.name} ({self.role})"
-
-
-from django.contrib.auth.models import AbstractUser, Group, Permission
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.db import models
-
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('leader', 'Leader'),
@@ -71,8 +48,7 @@ class User(AbstractUser):
             raise ValidationError(_('Email must be an @abdn.ac.uk address.'))
 
     def save(self, *args, **kwargs):
-        # Ensure the clean method is called before saving
-        self.full_clean()  # This calls the clean() method and validates fields
+        self.full_clean()  # Ensure validation is called before saving
         super().save(*args, **kwargs)
 
     @classmethod
@@ -96,6 +72,33 @@ class User(AbstractUser):
             Permission.objects.get(codename='view_teammembership')
         )
 
+    def __str__(self):
+        return self.username  # Display username in the admin
+
+
+class TeamMembership(models.Model):
+    ROLE_CHOICES = [
+        ('leader', 'Leader'),
+        ('staff', 'Staff'),
+        ('new_staff', 'New Staff'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+
+    class Meta:
+        unique_together = ('user', 'team')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.team.name} ({self.role})"
+
+
+class Strain(models.Model):
+    name = models.CharField(max_length=15, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Mouse(models.Model):
@@ -109,7 +112,7 @@ class Mouse(models.Model):
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
     
     mouse_id = models.AutoField(primary_key=True)  # Unique ID for all mice
-    strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
+    strain = models.ForeignKey(Strain, on_delete=models.CASCADE)
     tube_id = models.IntegerField()  # Managed within each strain
     dob = models.DateField()
     sex = models.CharField(max_length=1, choices=SEX_CHOICES)
@@ -123,6 +126,7 @@ class Mouse(models.Model):
     mouse_keeper = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
     def save(self, *args, **kwargs):
+        # Automatically assign a mouse keeper if not provided
         if not self.mouse_keeper:
             request_user = kwargs.pop('request_user', None)
             if request_user:
@@ -139,13 +143,6 @@ class Mouse(models.Model):
 
     def __str__(self):
         return f"Mouse {self.mouse_id} - {self.strain} - Tube {self.tube_id}"
-
-
-class Strain(models.Model):
-    name = models.CharField(max_length=15, unique=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Cage(models.Model):
@@ -175,6 +172,9 @@ class Breed(models.Model):
         self.female.save()
         self.save()
 
+    def __str__(self):
+        return f"Breed {self.breed_id} - {self.male} x {self.female}"
+
 
 class BreedingHistory(models.Model):
     breed = models.ForeignKey(Breed, on_delete=models.CASCADE)
@@ -186,6 +186,9 @@ class BreedingHistory(models.Model):
         self.finished_at = dt.datetime.now()
         self.breed.end_breeding()  # Call the breed's method to finalize it
         self.save()
+
+    def __str__(self):
+        return f"Breeding History for {self.breed}"
 
 
 # Signal to create BreedingHistory automatically when Breed is created
@@ -221,3 +224,4 @@ class Phenotype(models.Model):
 
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.characteristic}: {self.description}"
+

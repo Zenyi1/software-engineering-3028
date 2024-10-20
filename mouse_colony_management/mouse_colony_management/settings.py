@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mouse_colony_management',
     'website',
     'whitenoise.runserver_nostatic',
 ]
@@ -88,17 +89,31 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Default database (SQLite for local development)
+# # Default database (SQLite for local development)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# # Update the database configuration for Heroku (PostgreSQL)
+# if 'DATABASE_URL' in os.environ:
+#     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+
+# settings.py
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mouse_colony_management_db',  # Your database name
+        'USER': 'postgres',               # Your PostgreSQL username
+        'PASSWORD': 'gonzaloescolar',           # Your PostgreSQL password
+        'HOST': 'localhost',
+        'PORT': '5432',                        # Default PostgreSQL port
     }
 }
 
-# Update the database configuration for Heroku (PostgreSQL)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 
 # DATABASES = {
