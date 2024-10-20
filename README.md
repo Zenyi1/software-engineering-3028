@@ -18,10 +18,10 @@ A web-based Mouse Colony Management System built with Django and MySQL. This sys
 ## Running this Project
 1. Clone this repository.
 2. Go to Microsoft Store and install python 3.10 (the project requires this version and doing it through microsoft store automatically sets all neccessary variables).
-3. Run command `python3.10 -m venv .venv` (the 3.10 is important to create a virtual environment with the correct python version).
+3. From the project directory (specifically `../software-engineering-3028/mouse_colony_management/`) run command `python3.10 -m venv .venv` (the `3.10` is important to create a virtual environment with the correct python version).
 4. Activate virtual environment using `.venv/Scripts/activate`.
-5. Install dependencies using `pip install -r requirements.txt`.
-6. Install MySQL locally making sure you the full version with all of the optional packages.
+5. Install dependencies using `pip install -r ../requirements.txt`.
+6. Install MySQL locally making sure you install the full version with all of the optional packages.
 7. During installation you will set a username (`root` is recommended) and a password, keep track of these as they will be needed for the next step.
 8. Create a file called `.env` (the `.` at the beginning is important) and set out the parameters like this (make sure each variable is on a new line and there are no trailing whitespaces):
     - ``` DB_NAME=mouse_colony_db DB_USER=your_username DB_PASSWORD=your_password DB_HOST=localhost DB_PORT=3306 ```
