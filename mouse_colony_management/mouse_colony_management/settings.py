@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-import environ # environ module allows the use of .env file to store database credentials
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,7 +85,6 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-<<<<<<< HEAD
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -94,19 +93,9 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT'),
-=======
-# Default database (SQLite for local development)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
->>>>>>> parent of 22f1e8a (Heroku Commit)
     }
 }
 
-# Update the database configuration for Heroku (PostgreSQL)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
