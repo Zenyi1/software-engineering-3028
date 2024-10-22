@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-center vh-100">
+    <div class="col-md-6">
+        <h1 class="text-center">Register</h1>
+        <br/>
+        <form method="POST" action="">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+			<p class="d-flex justify-content-center">Already have an account?<a href="{% url 'login' %}" class="d-flex justify-content-center px-2">Login Instead</a></p>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

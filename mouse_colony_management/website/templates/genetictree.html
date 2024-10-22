@@ -1,0 +1,26 @@
+<!-- genetictree.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Genetic Tree for {{ mouse }}</h1>
+
+    <h3>Ancestors</h3>
+    <ul>
+        {% for ancestor in ancestors %}
+            <li>{{ ancestor }}</li>
+        {% empty %}
+            <li>No ancestors found.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Descendants</h3>
+    <ul>
+        {% for descendant in descendants %}
+            <li>{{ descendant }}</li>
+        {% empty %}
+            <li>No descendants found.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,153 +1,19 @@
-# core/models.py
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
-import datetime as dt
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractUser, Group, Permission
+import datetime as dt
 
+# # ---------- Role Model ----------
+# class Role(models.Model):
+#     name = models.CharField(max_length=50)
 
-class Team(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-
-class TeamMembership(models.Model):
-    ROLE_CHOICES = [
-        ('leader', 'Leader'),
-        ('staff', 'Staff'),
-        ('new_staff', 'New Staff'),
-    ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-
-    class Meta:
-        unique_together = ('user', 'team')
-
-    def __str__(self):
-        return f"{self.user.username} - {self.team.name} ({self.role})"
-
-
-from django.contrib.auth.models import AbstractUser, Group, Permission
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.db import models
-
-class User(AbstractUser):
-    ROLE_CHOICES = [
-        ('leader', 'Leader'),
-        ('staff', 'Staff'),
-        ('new_staff', 'New Staff'),
-    ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='new_staff')
-    team = models.ForeignKey('Team', on_delete=models.SET_NULL, null=True, blank=True)
-
-    # Use unique related_name to avoid clashes with auth.User
-    groups = models.ManyToManyField(
-        Group,
-        related_name='website_user_set',  # Add a unique related_name for 'groups'
-        blank=True,
-        help_text='The groups this user belongs to.'
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='website_user_permissions_set',  # Add a unique related_name for 'permissions'
-        blank=True,
-        help_text='Specific permissions for this user.'
-    )
-
-    def clean(self):
-        super().clean()  # Call the parent class clean method
-        
-        # Enforce email domain constraint
-        if self.email and not self.email.endswith('@abdn.ac.uk'):
-            raise ValidationError(_('Email must be an @abdn.ac.uk address.'))
-
-    def save(self, *args, **kwargs):
-        # Ensure the clean method is called before saving
-        self.full_clean()  # This calls the clean() method and validates fields
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def create_default_groups(cls):
-        # Ensure groups exist
-        leader_group, _ = Group.objects.get_or_create(name='Leader')
-        staff_group, _ = Group.objects.get_or_create(name='Staff')
-        new_staff_group, _ = Group.objects.get_or_create(name='New Staff')
-
-        # Set permissions for each group
-        team_permissions = Permission.objects.filter(codename__in=['add_team', 'change_team', 'view_team', 'delete_team'])
-        membership_permissions = Permission.objects.filter(codename__in=['add_teammembership', 'change_teammembership', 'view_teammembership', 'delete_teammembership'])
-
-        leader_group.permissions.add(*team_permissions, *membership_permissions)
-        staff_group.permissions.add(
-            Permission.objects.get(codename='view_team'), 
-            Permission.objects.get(codename='view_teammembership')
-        )
-        new_staff_group.permissions.add(
-            Permission.objects.get(codename='view_team'), 
-            Permission.objects.get(codename='view_teammembership')
-        )
-
-
-
-class Mouse(models.Model):
-    SEX_CHOICES = [('M', 'Male'), ('F', 'Female')]
-    CLIPPED_CHOICES = [
-        ('TL', 'Top Left'),
-        ('TR', 'Top Right'),
-        ('BL', 'Bottom Left'),
-        ('BR', 'Bottom Right'),
-    ]
-    STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
+#     def __str__(self):
+#         return self.name
     
-    mouse_id = models.AutoField(primary_key=True)  # Unique ID for all mice
-    strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
-    tube_id = models.IntegerField()  # Managed within each strain
-    dob = models.DateField()
-    sex = models.CharField(max_length=1, choices=SEX_CHOICES)
-    father = models.ForeignKey('self', on_delete=models.SET_NULL, limit_choices_to={'sex': 'M'}, null=True, blank=True, related_name='father_of')
-    mother = models.ForeignKey('self', on_delete=models.SET_NULL, limit_choices_to={'sex': 'F'}, null=True, blank=True, related_name='mother_of')
-    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True)
-    clipped_date = models.DateField(null=True, blank=True)
-    state = models.CharField(max_length=12, choices=STATE_CHOICES)
-    cull_date = models.DateTimeField(null=True, blank=True)
-
-    mouse_keeper = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
-
-    def save(self, *args, **kwargs):
-        if not self.mouse_keeper:
-            request_user = kwargs.pop('request_user', None)
-            if request_user:
-                try:
-                    team_membership = TeamMembership.objects.get(user=request_user)
-                    leader_membership = TeamMembership.objects.get(team=team_membership.team, role='leader')
-                    self.mouse_keeper = leader_membership.user
-                except TeamMembership.DoesNotExist:
-                    pass  # Handle case where no team or leader is found
-        super().save(*args, **kwargs)
-
-    class Meta:
-        unique_together = ('strain', 'tube_id')
-
-    def __str__(self):
-        return f"Mouse {self.mouse_id} - {self.strain} - Tube {self.tube_id}"
-
-
-class Strain(models.Model):
-    name = models.CharField(max_length=15, unique=True)
-
-    def __str__(self):
-        return self.name
-
-
+# ---------- Cage Model ----------
 class Cage(models.Model):
     cage_id = models.AutoField(primary_key=True)
     cage_number = models.CharField(max_length=10, unique=True)
@@ -158,8 +24,203 @@ class Cage(models.Model):
         return self.cage_number
 
 
+# ---------- User Model ----------
+class User(AbstractUser):
+    ROLE_CHOICES = [
+        ('leader', 'Leader'),
+        ('staff', 'Staff'),
+        ('new_staff', 'New Staff'),
+    ]
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='new_staff')
+
+    # Enforce email validation
+    def clean(self):
+        super().clean()
+        if self.email and not self.email.endswith('@abdn.ac.uk'):
+            raise ValidationError(_('Email must be an @abdn.ac.uk address.'))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Calls the clean method before saving
+        super().save(*args, **kwargs)
+
+
+# ---------- Team Model ----------
+class Team(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+    
+# ---------- Team Membership ----------
+class TeamMembership(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    
+    class Meta:
+        unique_together = ("user", "team")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.team.name} ({self.user.role})"
+
+
+# # ---------- Researcher Profile ----------
+# class ResearcherProfile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+#     role = models.ForeignKey(Role, on_delete=models.CASCADE)
+
+#     def __str__(self):
+#         return f"{self.user.username} - {self.role.name}"
+
+
+# # Signal to create a ResearcherProfile when a User is created
+# @receiver(post_save, sender=User)
+# def create_user_profile(sender, instance, created, **kwargs):
+#     if created:
+#         default_role = Role.objects.get(name='New Staff')  # Ensure 'New Staff' role exists
+#         ResearcherProfile.objects.create(user=instance, role=default_role)
+
+
+# ---------- Mouse Model ----------
+class Mouse(models.Model):
+    SEX_CHOICES = [('M', 'Male'), ('F', 'Female')]
+    CLIPPED_CHOICES = [
+        ('TL', 'Top Left'),
+        ('TR', 'Top Right'),
+        ('BL', 'Bottom Left'),
+        ('BR', 'Bottom Right'),
+    ]
+    STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
+
+    mouse_id = models.AutoField(primary_key=True)
+    strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
+    tube_id = models.IntegerField()
+    dob = models.DateField()
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES)
+    father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='father_of', limit_choices_to={'sex': 'M'})
+    mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='mother_of', limit_choices_to={'sex': 'F'})
+    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True)
+    clipped_date = models.DateField(null=True, blank=True)
+    state = models.CharField(max_length=12, choices=STATE_CHOICES)
+    cull_date = models.DateTimeField(null=True, blank=True)
+    mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
+
+    class Meta:
+        unique_together = ('strain', 'tube_id')
+
+    def __str__(self):
+        return f"Mouse {self.mouse_id} - {self.strain} - Tube {self.tube_id}"
+    
+    def get_ancestors(self):
+        ancestors = []
+        if self.mother:
+            ancestors.append(self.mother)
+            ancestors.extend(self.mother.get_ancestors())
+        if self.father:
+            ancestors.append(self.father)
+            ancestors.extend(self.father.get_ancestors())
+        return ancestors
+
+    def get_descendants(self):
+        descendants = list(self.mother_of.all()) + list(self.father_of.all())
+        for child in descendants:
+            descendants.extend(child.get_descendants())
+        return descendants
+
+
+# ---------- Request Model ----------
+class Request(models.Model):
+    REQUEST_TYPES = [
+        ('breed', 'Breeding Request'),
+        ('cull', 'Culling Request'),
+        # ('end_breed', 'End Breeding Request'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('completed', 'Completed'),
+    ]
+    request_id = models.AutoField(primary_key=True)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE)
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='primary_mouse_requests')
+    second_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, null=True, blank=True, related_name='secondary_mouse_requests', help_text="For breeding requests, select a second mouse of the opposite sex.")
+    cage = models.ForeignKey(Cage, on_delete=models.CASCADE, null=True, blank=True, help_text="Required for breeding requests.")
+    request_type = models.CharField(max_length=10, choices=REQUEST_TYPES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    comments = models.TextField(blank=True, null=True)
+
+    def clean(self):
+        """Custom validation for the request model."""
+        # Ensure second_mouse is provided only for breeding requests
+        if self.request_type == 'breed':
+            if not self.second_mouse:
+                raise ValidationError("Breeding requests must specify a second mouse.")
+            # Ensure the two mice are of opposite sex
+            if self.mouse.sex == self.second_mouse.sex:
+                raise ValidationError("For breeding requests, the two mice must be of opposite sexes.")
+            # Ensure a cage is provided for breeding requests
+            if not self.cage:
+                raise ValidationError("A cage must be specified for breeding requests.")
+        elif self.request_type == 'cull':
+            if self.second_mouse:
+                raise ValidationError("Culling requests should not have a second mouse.")
+            # Ensure that cage is not set for non-breeding requests
+            if self.cage:
+                raise ValidationError(f"A cage should not be specified for {self.request_type} requests.")
+
+        super().clean()
+
+    def __str__(self):
+        if self.request_type == 'breed':
+            return f"Breeding Request: {self.mouse.mouse_id} with {self.second_mouse.mouse_id} by {self.requester.username}"
+        return f"{self.request_type} Request by {self.requester.username} for Mouse {self.mouse.mouse_id}"
+
+    def approve(self):
+        self.status = 'approved'
+        self.save()
+
+    def reject(self):
+        self.status = 'rejected'
+        self.save()
+
+    def complete(self):
+        self.status = 'completed'
+        self.save()
+
+        # Handle culling request completion
+        if self.request_type == 'cull':
+            self.mouse.state = 'deceased'
+            self.mouse.cull_date = dt.datetime.now()
+            self.mouse.save()
+
+        # Handle breeding request completion
+        if self.request_type == 'breed':
+            self.mouse.state = 'breeding'  # Update first mouse to breeding state
+            self.second_mouse.state = 'breeding'  # Update second mouse to breeding state
+            self.mouse.save()
+            self.second_mouse.save()
+
+            # Create a new Breed instance
+            Breed.objects.create(
+                male=self.mouse,
+                female=self.second_mouse,
+                cage=self.cage,
+            )
+
+        # # Handle end breeding request completion
+        # if self.request_type == 'end_breed':
+        #     self.mouse.state = 'alive'  # Update first mouse to alive state
+        #     self.second_mouse.state = 'alive'  # Update second mouse to alive state
+        #     self.mouse.save()
+        #     self.second_mouse.save()
+           
+
+# ---------- Breed Model ----------
 class Breed(models.Model):
-    breed_id = models.CharField(max_length=15, primary_key=True)
+    breed_id = models.AutoField(primary_key=True)
     male = models.ForeignKey(Mouse, on_delete=models.CASCADE, limit_choices_to={'sex': 'M'}, related_name='male_breeds')
     female = models.ForeignKey(Mouse, on_delete=models.CASCADE, limit_choices_to={'sex': 'F'}, related_name='female_breeds')
     cage = models.ForeignKey(Cage, on_delete=models.CASCADE)
@@ -175,33 +236,14 @@ class Breed(models.Model):
         self.female.save()
         self.save()
 
+# ---------- Strain Model ----------
+class Strain(models.Model):
+    name = models.CharField(max_length=15, unique=True)
 
-class BreedingHistory(models.Model):
-    breed = models.ForeignKey(Breed, on_delete=models.CASCADE)
-    started_at = models.DateTimeField(auto_now_add=True)
-    finished_at = models.DateTimeField(null=True, blank=True)
-
-    def finish_breeding(self):
-        """Set the finished time and update the breed end date."""
-        self.finished_at = dt.datetime.now()
-        self.breed.end_breeding()  # Call the breed's method to finalize it
-        self.save()
-
-
-# Signal to create BreedingHistory automatically when Breed is created
-@receiver(post_save, sender=Breed)
-def create_breeding_history(sender, instance, created, **kwargs):
-    if created:
-        # Create a BreedingHistory instance linked to this Breed
-        BreedingHistory.objects.create(breed=instance)
-
-        # Update both mice to 'breeding' state
-        instance.male.state = 'breeding'
-        instance.male.save()
-        instance.female.state = 'breeding'
-        instance.female.save()
-
-
+    def __str__(self):
+        return self.name
+    
+# ---------- Genotype Model ----------
 class Genotype(models.Model):
     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='genotypes')
     gene = models.CharField(max_length=50)  # The gene or marker being tested
@@ -213,6 +255,7 @@ class Genotype(models.Model):
         return f"{self.mouse.mouse_id} - {self.gene}: {self.allele_1}/{self.allele_2}"
 
 
+# ---------- Phenotype Model ----------
 class Phenotype(models.Model):
     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='phenotypes')
     characteristic = models.CharField(max_length=100)  # The observable trait, e.g., "Coat Color"
@@ -221,3 +264,4 @@ class Phenotype(models.Model):
 
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.characteristic}: {self.description}"
+
