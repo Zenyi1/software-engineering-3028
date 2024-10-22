@@ -16,6 +16,22 @@
                     {% endif %}
                 </div>
             {% endfor %}
+            <!-- Privacy Policy and Terms of Service Checkboxes -->
+            <div class="d-inline">
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="tos" required>
+                    <label class="form-check-label" for="tos">
+                    I agree to the <a href="{% url 'terms_of_service' %}" target="_blank">Terms of Service</a>
+                    </label>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input type="checkbox" class="form-check-input" id="privacyPolicy" required>
+                    <label class="form-check-label" for="privacyPolicy">
+                    I agree to the <a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a>
+                    </label>
+                </div>
+            </div>
             <button type="submit" class="btn btn-primary w-100">Register</button>
 			<p class="d-flex justify-content-center">Already have an account?<a href="{% url 'login' %}" class="d-flex justify-content-center px-2">Login Instead</a></p>
         </form>

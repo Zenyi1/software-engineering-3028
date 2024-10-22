@@ -5,6 +5,12 @@ from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
 from .forms import *
 
+# Legal Boiler-plate Views
+def terms_of_service(request):
+    return render(request, 'legal/terms-of-service.html')
+def privacy_policy(request):
+    return render(request, 'legal/privacy-policy.html')
+
 
 @login_required
 def home(request):
