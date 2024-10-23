@@ -235,6 +235,9 @@ class Breed(models.Model):
         self.male.save()
         self.female.save()
         self.save()
+    
+    def __str__(self):
+        return f"Breeding {self.male.mouse_id} x {self.female.mouse_id}"
 
 # ---------- Strain Model ----------
 class Strain(models.Model):

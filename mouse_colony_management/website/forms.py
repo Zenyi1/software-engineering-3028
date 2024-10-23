@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from .models import *  # Import your custom User model
 
-class CustomUserCreationForm(UserCreationForm):
+class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)  # Keep email as required
     first_name = forms.CharField(max_length=30, required=True)  # First name
     last_name = forms.CharField(max_length=30, required=True)  # Last name
@@ -21,7 +21,7 @@ class CustomUserCreationForm(UserCreationForm):
         return email
 
     def save(self, commit=True):
-        user = super(CustomUserCreationForm, self).save(commit=False)
+        user = super(RegistrationForm, self).save(commit=False)
         user.email = self.cleaned_data["email"]
         if commit:
             user.save()

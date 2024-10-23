@@ -13,24 +13,24 @@ def privacy_policy(request):
 
 
 @login_required
-def home(request):
+def home_view(request):
     return render(request, "home.html", {})
 
 @login_required
 def logout_user(request):
     logout(request)
     messages.success(request, "You have been logged out...")
-    return redirect('index')
+    return redirect('login')
 
 def register(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)  # Log the user in after registration
             return redirect('index')  # Redirect to homepage
     else:
-        form = CustomUserCreationForm()
+        form = RegistrationForm()
 
     return render(request, 'registration/register.html', {'form': form})
 
