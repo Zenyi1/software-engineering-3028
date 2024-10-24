@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>User Profile</h2>
+    <div class="profile-details">
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+        
+        {% if user.teammembership_set.all %}
+        <h3>Teams</h3>
+        <ul>
+            {% for membership in user.teammembership_set.all %}
+                <li>{{ membership.team.name }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

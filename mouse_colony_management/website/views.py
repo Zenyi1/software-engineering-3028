@@ -22,6 +22,11 @@ def logout_user(request):
     messages.success(request, "You have been logged out...")
     return redirect('login')
 
+@login_required
+def profile_view(request):
+    return render(request, 'profile.html')
+
+
 def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)

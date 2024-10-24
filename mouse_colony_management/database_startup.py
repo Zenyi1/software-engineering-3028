@@ -9,7 +9,7 @@ dataBase = mysql.connector.connect(
 
     host="localhost",
     user="root",
-    passwd="Gonzaloescolar1!",
+    passwd="root",
 
 )
 

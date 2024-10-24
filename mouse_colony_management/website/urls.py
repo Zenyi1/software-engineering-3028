@@ -11,4 +11,6 @@ urlpatterns = [
     path('register/', views.register, name='register'), # Register page
     path('logout/', views.logout_user, name="logout_user"),
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
+    path('profile/', views.profile_view, name='profile'),
+
 ]
