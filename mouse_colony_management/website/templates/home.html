@@ -2,6 +2,71 @@
 
 {% block content %}
 <h1>Welcome, {{ user.first_name }} {{ user.last_name }}!</h1>
-<p>You are logged in.</p>
 
+<div class="dashboard-section">
+    <h2>Mouse Colony Overview</h2>
+    
+    <table class="mouse-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Sex</th>
+                <th>Date of Birth</th>
+                <th>Strain</th>
+                <th>Status</th>
+                <th>Cage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mouse in mice %}
+            <tr>
+                <td>{{ mouse.id }}</td>
+                <td>{{ mouse.name }}</td>
+                <td>{{ mouse.sex }}</td>
+                <td>{{ mouse.date_of_birth }}</td>
+                <td>{{ mouse.strain.name }}</td>
+                <td>{{ mouse.status }}</td>
+                <td>{{ mouse.cage.name|default:"No Cage" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">No mice found in the database.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .dashboard-section {
+        margin: 20px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .mouse-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .mouse-table th,
+    .mouse-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .mouse-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    .mouse-table tr:hover {
+        background-color: #f9f9f9;
+    }
+</style>
 {% endblock %}

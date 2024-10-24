@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
 from .forms import *
+from .models import Mouse  # Make sure to import the Mouse model
+
 
 # Legal Boiler-plate Views
 def terms_of_service(request):
@@ -14,7 +16,12 @@ def privacy_policy(request):
 
 @login_required
 def home_view(request):
-    return render(request, "home.html", {})
+    mice = Mouse.objects.all()
+    context = {
+        'user': request.user,
+        'mice': mice,
+    }
+    return render(request, 'home.html', context)
 
 @login_required
 def logout_user(request):
